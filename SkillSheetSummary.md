@@ -15,6 +15,7 @@
 
 ## 資格
 
+
 ## 受講したことがあるもの
 ### Data Analytics
 Cousera Google データアナリティクス プロフェッショナル認定証
