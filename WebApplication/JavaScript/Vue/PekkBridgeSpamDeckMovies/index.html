@@ -1,0 +1,40 @@
+<html>
+<head>
+</head>
+<body>
+    <main id="movieList">
+        <section>
+            <div>
+                <ul>
+                    <li v-for="row in cardList">
+                        <p v-text="row.cardId"></p>
+                    </li>
+                </ul> 
+            </div>
+            <div>
+                <button @click="filterList">検索</button>
+            </div>
+           
+        </section>
+        <section>
+            <ul>
+                <li v-for="row in filteredMovieList">
+                    <div>
+                        <h3>タイトル</h3>
+                        <a :href="'https://youtube.com/watch?v=' + row.movieId">link</a>
+                        <a :href="row.deckParams.win">Win</a>
+                        <a :href="row.deckParams.lose">Lose</a>
+                        <div>
+                            movie area
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </section>
+    </main>
+</body>
+</html>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+<script src="./src/data.js"></script>
+<script src="./src/movieList.js"></script>
+
