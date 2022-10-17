@@ -11,13 +11,7 @@ DRY	同じものを繰り返さない
 KISS	Keep it simple stupid
 SOLID	実装でないと意味ない
 	immutable
-デザインパターン	Composite
-結局クラスの分け方	State
-	Strategy
-	実装でないと意味ない
-	Command
-	Observer
-	Strategy
+
 	
 クラス設計	テストしやすい設計がいい設計
 	
