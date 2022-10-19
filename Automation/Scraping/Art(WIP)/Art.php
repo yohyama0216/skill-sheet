@@ -72,4 +72,4 @@ class Art
 
 $Art = new Art();
 $list = $Art->createPriceList();
-var_dump($Art->groupByPrice());
+var_dump($Art->groupByName());

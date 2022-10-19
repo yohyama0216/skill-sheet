@@ -43,6 +43,6 @@ class Etf {
         return $matches[1];
     }
 }
-$Dividend = new Dividend();
-$Dividend->getEtfInfo();
-$Dividend->display();
+$Etf = new Etf();
+$Etf->getEtfInfo();
+$Etf->display();

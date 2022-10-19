@@ -17,25 +17,12 @@ $in = [
 ];
 
 $out = [];
-foreach($in as $key1 => $item1) {
-    if (is_array($item1)){
-        foreach($item1 as $key2 => $item2) {
-            setKeyAndValue($key2,$item2,$out);
-        }
-    } else {
-        setKeyAndValue($key1,$item1,$out);
-    }
-}
-ksort($out,SORT_NUMERIC);
-print_r($out);
-
-function setKeyAndValue($key, $item, &$out) {
+array_walk_recursive($in, function($value, $key) use (&$out) {
     $firstChar = str_split($key)[0];
     if (is_numeric($firstChar)) {
-        $out[$key] = $item;
+        $out[$key] = $value;
     } else {
-        $out[$item] = $key;
+        $out[$value] = $key;
     }
-}
-
+});
 ?>
