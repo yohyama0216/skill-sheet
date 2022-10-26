@@ -28,3 +28,13 @@ methodはキャッシュされない。computedはキャッシュされる。
 
 #### Nuxt.js
 以上のツールなどが入ったVueのフレームワーク。
+
+
+作るもの	簡単でいいので体に叩き込む	
+ToDoリスト	簡単なやつ	https://dotinstall.com/lessons/basic_vuejs_v2
+テトリス		
+マリオ		
+ブロック崩し		
+API的なやつ？		
+クラロワデッキ検索		
+		
