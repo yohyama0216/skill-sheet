@@ -3,48 +3,57 @@
 class TradeSimulation
 {
     private $PriceData = null;
-    private $typeData = []; // @todo 取引はStrategyクラスにまとめる
-    private $Positions = null; // @todo 取引はStrategyクラスにまとめる
-    private $totalBenefit = 0; // @todo 取引はStrategyクラスにまとめる
-    private $maxDrawdown = 0; // @todo 取引はStrategyクラスにまとめる
-    private $tradeCount= 0; // @todo 取引はStrategyクラスにまとめる
+    private $Strategy = null;
 
     public function __construct()
     {
         $this->PriceData = new PriceData();
+        $this->Strategy = new Strategy();
+    }
+
+    public function simulate()
+    {
+        $priceData = $this->PriceData->get(); // 微妙
+        $this->Strategy->trade($priceData); // 微妙
+    }
+}
+
+// トレード戦略
+class Strategy
+{
+    private $typeData = [];
+    private $Positions = null; 
+    private $totalBenefit = 0;
+    private $maxDrawdown = 0;
+    private $tradeCount= 0;
+
+    public function __construct()
+    {
         $this->typeData = $this->generateTypeData();
         $this->Positions = new Positions();
     }
 
-    private function generateTypeData()
+    public function trade($priceData)
     {
-        $data = [];
-        foreach($this->PriceData->get() as $price) {
-            $data[] = ($price % 3 == 0) ? 'SELL' : 'BUY'; 
-        }
-        return $data;
-    }
-    
-    public function setMaxDrawdown($drawdown)
-    {
-        if ($this->maxDrawdown > $drawdown) {
-            $this->maxDrawdown = $drawdown;
-        }
-    }
-
-    public function trade()
-    {
-        $priceData = $this->PriceData->get();
         foreach($priceData as $key => $price) {
             $this->settle($price);
             $this->entry($key,$price);
             $this->showPositions();
         }
+        $this->showTotalBenefit();
+        $this->showPositionsTotalBenefit($price);
+        $this->showMaxDrawdown();
+        $this->showTradeCount($priceData); // 微妙
     }
 
-    public function getType($key)
+    private function generateTypeData()
     {
-        return $this->typeData[$key];
+        $data = [];
+        $PriceData = new PriceData(); // データはどうする？なんか微妙
+        foreach($PriceData->get() as $price) {
+            $data[] = ($price % 3 == 0) ? 'SELL' : 'BUY'; 
+        }
+        return $data;
     }
 
     /** 決済する */
@@ -73,6 +82,11 @@ class TradeSimulation
         }
     }
 
+    public function getType($key)
+    {
+        return $this->typeData[$key];
+    }
+
     public function addTradeCount()
     {
         $this->tradeCount++; 
@@ -88,7 +102,12 @@ class TradeSimulation
         return $this->totalBenefit;
     }
 
-
+    public function setMaxDrawdown($drawdown)
+    {
+        if ($this->maxDrawdown > $drawdown) {
+            $this->maxDrawdown = $drawdown;
+        }
+    }
 
     public function showPositions()
     {
@@ -96,10 +115,9 @@ class TradeSimulation
         echo '--------------'.PHP_EOL;
     }
 
-    public function showPositionsTotalBenefit()
+    public function showPositionsTotalBenefit($currentPrice)
     {
-        
-        echo '含み損'.$this->Positions->getAllCurrentBenefit($this->PriceData->getLastPrice()).PHP_EOL;
+        echo '含み損'.$this->Positions->getAllCurrentBenefit($currentPrice).PHP_EOL;
     }
 
     public function showTotalBenefit()
@@ -112,9 +130,9 @@ class TradeSimulation
         echo '最大ドローダウン'.$this->maxDrawdown.PHP_EOL;
     }
 
-    public function showTradeCount()
+    public function showTradeCount($priceData)
     {
-        echo '全データ数'.count($this->PriceData->get()).PHP_EOL;
+        echo '全データ数'.count($priceData).PHP_EOL;
         echo '取引回数'.$this->tradeCount.PHP_EOL;
     }
 }
@@ -237,13 +255,8 @@ class Position
     }
 }
 
-// mainメソッドにまとめる？
-// 実際はシミュレーターなのでSimulateでは？
 $tradeSimulation = new TradeSimulation();
-$tradeSimulation->trade();
-$tradeSimulation->showTotalBenefit();
-$tradeSimulation->showPositionsTotalBenefit();
-$tradeSimulation->showMaxDrawdown();
-$tradeSimulation->showTradeCount();
+$tradeSimulation->simulate();
+
 
 
