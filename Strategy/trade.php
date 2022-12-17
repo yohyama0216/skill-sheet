@@ -2,42 +2,27 @@
 
 class Trading
 {
-    private $priceData = []; // @todo PriceDataクラスを作成する
+    private $PriceData = null; // @todo PriceDataクラスを作成する
     private $typeData = []; // @todo 取引はStrategyクラスにまとめる
     private $Positions = null; // @todo 取引はStrategyクラスにまとめる
-    private $currentPrice = 0; // @todo PriceDataクラスを作成する
     private $totalBenefit = 0; // @todo 取引はStrategyクラスにまとめる
     private $maxDrawdown = 0; // @todo 取引はStrategyクラスにまとめる
     private $tradeCount= 0; // @todo 取引はStrategyクラスにまとめる
 
     public function __construct()
     {
-        $this->priceData = $this->generatePriceData();
+        $this->PriceData = new PriceData();
         $this->typeData = $this->generateTypeData();
         $this->Positions = new Positions();
-    }
-
-    private function generatePriceData()
-    {
-        $data = [];
-        for($i=0;$i<100;$i++) {
-            $data[] = rand(1,100) - rand(1,100);
-        }
-        return $data;
     }
 
     private function generateTypeData()
     {
         $data = [];
-        foreach($this->priceData as $price) {
+        foreach($this->PriceData->get() as $price) {
             $data[] = ($price % 3 == 0) ? 'SELL' : 'BUY'; 
         }
         return $data;
-    }
-
-    public function setCurrentPrice($price)
-    {
-        $this->currentPrice = $price;
     }
     
     public function setMaxDrawdown($drawdown)
@@ -49,10 +34,10 @@ class Trading
 
     public function trade()
     {
-        foreach($this->priceData as $key => $price) {
-            $this->setCurrentPrice($price);
-            $this->settle();
-            $this->entry($key);
+        $priceData = $this->PriceData->get();
+        foreach($priceData as $key => $price) {
+            $this->settle($price);
+            $this->entry($key,$price);
             $this->showPositions();
         }
     }
@@ -63,13 +48,13 @@ class Trading
     }
 
     /** 決済する */
-    public function settle()
+    public function settle($currentPrice)
     {
         if ($this->Positions == null) {
             return ;
         }
         
-        $benefit = $this->Positions->getAllCurrentBenefit($this->currentPrice);
+        $benefit = $this->Positions->getAllCurrentBenefit($currentPrice);
         if ($benefit > 0) {
             $this->Positions->clearPositions();
             $this->setTotalBenefit($benefit);
@@ -79,11 +64,11 @@ class Trading
     }
 
     /** ポジションを持つ */
-    public function entry($key)
+    public function entry($key,$currentPrice)
     {
         $type = $this->getType($key);
         if (empty($this->Positions) || $this->Positions->countPositions() < 5) {
-            $this->Positions->addPosition(new Position(1, $type, $this->currentPrice));
+            $this->Positions->addPosition(new Position(1, $type, $currentPrice));
             $this->addTradeCount();
         }
     }
@@ -103,10 +88,7 @@ class Trading
         return $this->totalBenefit;
     }
 
-    public function getPriceData()
-    {
-        return $this->priceData;
-    }
+
 
     public function showPositions()
     {
@@ -116,7 +98,8 @@ class Trading
 
     public function showPositionsTotalBenefit()
     {
-        echo '含み損'.$this->Positions->getAllCurrentBenefit(end($this->priceData)).PHP_EOL;
+        
+        echo '含み損'.$this->Positions->getAllCurrentBenefit($this->PriceData->getLastPrice()).PHP_EOL;
     }
 
     public function showTotalBenefit()
@@ -131,8 +114,45 @@ class Trading
 
     public function showTradeCount()
     {
-        echo '全データ数'.count($this->priceData).PHP_EOL;
+        echo '全データ数'.count($this->PriceData->get()).PHP_EOL;
         echo '取引回数'.$this->tradeCount.PHP_EOL;
+    }
+}
+
+// 価格データ
+class PriceData
+{
+    private $priceData = []; // Priceクラスも作る？
+
+
+    public function __construct()
+    {
+        $this->priceData = $this->generateDummyPriceData();
+    }
+
+    private function generateDummyPriceData()
+    {
+        $data = [];
+        for($i=0;$i<100;$i++) {
+            $data[] = rand(1,100) - rand(1,100);
+        }
+        return $data;
+    }
+
+    // public function setCurrentPrice($price)
+    // {
+    //     $this->currentPrice = $price;
+    // }
+
+    public function get()
+    {
+        return $this->priceData;
+    }
+
+    public function getLastPrice()
+    {
+        $priceData = $this->get(); // なんか微妙
+        return end($priceData);
     }
 }
 
