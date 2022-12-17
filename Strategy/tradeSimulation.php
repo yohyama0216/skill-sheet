@@ -21,7 +21,6 @@ class TradeSimulation
 // トレード戦略
 class Strategy
 {
-    private $typeData = [];
     private $Positions = null; 
     private $totalBenefit = 0;
     private $maxDrawdown = 0;
@@ -29,7 +28,6 @@ class Strategy
 
     public function __construct()
     {
-        $this->typeData = $this->generateTypeData();
         $this->Positions = new Positions();
     }
 
@@ -44,16 +42,6 @@ class Strategy
         $this->showPositionsTotalBenefit($price);
         $this->showMaxDrawdown();
         $this->showTradeCount($priceData); // 微妙
-    }
-
-    private function generateTypeData()
-    {
-        $data = [];
-        $PriceData = new PriceData(); // データはどうする？なんか微妙
-        foreach($PriceData->get() as $price) {
-            $data[] = ($price % 3 == 0) ? 'SELL' : 'BUY'; 
-        }
-        return $data;
     }
 
     /** 決済する */
@@ -73,18 +61,18 @@ class Strategy
     }
 
     /** ポジションを持つ */
-    public function entry($key,$currentPrice)
+    public function entry($currentPrice)
     {
-        $type = $this->getType($key);
+        $entryType = $this->setEntryType($currentPrice);
         if (empty($this->Positions) || $this->Positions->countPositions() < 5) {
-            $this->Positions->addPosition(new Position(1, $type, $currentPrice));
+            $this->Positions->addPosition(new Position(1, $entryType, $currentPrice));
             $this->addTradeCount();
         }
     }
 
-    public function getType($key)
+    public function setEntryType($currentPrice)
     {
-        return $this->typeData[$key];
+        return ($currentPrice % 3 == 0) ? 'SELL' : 'BUY'; 
     }
 
     public function addTradeCount()
@@ -232,24 +220,24 @@ class Position
     private $lot = 0;
 
     /** 売りor買い */
-    private $type = '';
+    private $entryType = '';
 
     /** 取得時の値段 */
     private $gotPrice = 0;
 
-    public function __construct($lot, $type, $gotPrice)
+    public function __construct($lot, $entryType, $gotPrice)
     {
         $this->lot = $lot;
-        $this->type = $type;
+        $this->entryType = $entryType;
         $this->gotPrice = $gotPrice;
     }
 
     /** 現在価格での損益を取得する */
     public function getCurrentBenefit($nowPrice)
     {
-        if ($this->type == 'BUY') {
+        if ($this->entryType == 'BUY') {
             return $nowPrice - $this->gotPrice;
-        } else if ($this->type == 'SELL')  {
+        } else if ($this->entryType == 'SELL')  {
             return  $this->gotPrice - $nowPrice;
         }
     }
@@ -257,6 +245,3 @@ class Position
 
 $tradeSimulation = new TradeSimulation();
 $tradeSimulation->simulate();
-
-
-
