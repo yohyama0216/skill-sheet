@@ -1,8 +1,8 @@
 <?php
 
-class Trading
+class TradeSimulation
 {
-    private $PriceData = null; // @todo PriceDataクラスを作成する
+    private $PriceData = null;
     private $typeData = []; // @todo 取引はStrategyクラスにまとめる
     private $Positions = null; // @todo 取引はStrategyクラスにまとめる
     private $totalBenefit = 0; // @todo 取引はStrategyクラスにまとめる
@@ -239,11 +239,11 @@ class Position
 
 // mainメソッドにまとめる？
 // 実際はシミュレーターなのでSimulateでは？
-$trading = new Trading();
-$trading->trade();
-$trading->showTotalBenefit();
-$trading->showPositionsTotalBenefit();
-$trading->showMaxDrawdown();
-$trading->showTradeCount();
+$tradeSimulation = new TradeSimulation();
+$tradeSimulation->trade();
+$tradeSimulation->showTotalBenefit();
+$tradeSimulation->showPositionsTotalBenefit();
+$tradeSimulation->showMaxDrawdown();
+$tradeSimulation->showTradeCount();
 
 
