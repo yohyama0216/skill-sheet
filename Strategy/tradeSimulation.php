@@ -8,7 +8,7 @@ class TradeSimulation
     public function __construct()
     {
         $this->PriceData = new PriceData();
-        $this->Strategy = new Strategy();
+        $this->Strategy = new Strategy(100000,1);
     }
 
     public function simulate()
@@ -21,13 +21,17 @@ class TradeSimulation
 // トレード戦略
 class Strategy
 {
+    private $initial = 0;
+    private $tradeLot = 0; // ロット？金額？　微妙
     private $Positions = null; 
     private $totalBenefit = 0;
     private $maxDrawdown = 0;
     private $tradeCount= 0;
 
-    public function __construct()
+    public function __construct($initial,$tradeLot)
     {
+        $this->initial = $initial;
+        $this->tradeLot = $tradeLot;
         $this->Positions = new Positions();
     }
 
@@ -35,7 +39,7 @@ class Strategy
     {
         foreach($priceData as $key => $price) {
             $this->settle($price);
-            $this->entry($key,$price);
+            $this->entry($price);
             $this->showPositions();
         }
         $this->showTotalBenefit();
@@ -55,6 +59,7 @@ class Strategy
         if ($benefit > 0) {
             $this->Positions->clearPositions();
             $this->setTotalBenefit($benefit);
+            $this->addTradeCount();
         } else {
             $this->setMaxDrawdown($benefit);
         }
@@ -64,15 +69,31 @@ class Strategy
     public function entry($currentPrice)
     {
         $entryType = $this->setEntryType($currentPrice);
-        if (empty($this->Positions) || $this->Positions->countPositions() < 5) {
-            $this->Positions->addPosition(new Position(1, $entryType, $currentPrice));
+        if ($this->canAddPosition($currentPrice)) {
+            // entryTypeが買いor売りが必ず2以上存在するようにする
+            $this->Positions->addPosition(new Position($this->tradeLot, $entryType, $currentPrice));
             $this->addTradeCount();
         }
     }
 
+    /** ポジションを追加する条件 */
+    public function canAddPosition($currentPrice)
+    {
+        $currentPositionsBenefit = $this->Positions->getAllCurrentBenefit($currentPrice);
+        $isLargerThanZeroTotal = (($this->initial + $this->totalBenefit + $currentPositionsBenefit) > 0);
+        return $isLargerThanZeroTotal && ($this->Positions->countPositions() < 5);
+    }
+
     public function setEntryType($currentPrice)
     {
-        return ($currentPrice % 3 == 0) ? 'SELL' : 'BUY'; 
+        $entryTypes = $this->Positions->getAllEntryType();
+        if ($entryTypes['SELL'] >= 3) {
+            return 'BUY';
+        } else if ($entryTypes['BUY'] >= 3) {
+            return 'SELL';
+        } else {
+            return (rand(1,10) % 2 == 0) ? 'SELL' : 'BUY'; 
+        }
     }
 
     public function addTradeCount()
@@ -139,8 +160,8 @@ class PriceData
     private function generateDummyPriceData()
     {
         $data = [];
-        for($i=0;$i<100;$i++) {
-            $data[] = rand(1,100) - rand(1,100);
+        for($i=0;$i<365;$i++) {
+            $data[] = 1000 + rand(1,300) - rand(1,300);
         }
         return $data;
     }
@@ -195,6 +216,20 @@ class Positions
         return $total;
     }
 
+    /** 現在のポジションの損益の合計を取得する */
+    public function getAllEntryType()
+    {
+        $entryTypes = [
+            'BUY' => 0,
+            'SELL' => 0, 
+        ];
+        foreach($this->positionList as $position) {
+            $entryType = $position->getEntryType();
+            $entryTypes[$entryType] += 1;
+        }
+        return $entryTypes;
+    }
+
     /** 建玉の数を取得する */
     public function countPositions()
     {
@@ -225,6 +260,11 @@ class Position
     /** 取得時の値段 */
     private $gotPrice = 0;
 
+    public function getEntryType()
+    {
+        return $this->entryType;
+    }
+
     public function __construct($lot, $entryType, $gotPrice)
     {
         $this->lot = $lot;
@@ -233,12 +273,12 @@ class Position
     }
 
     /** 現在価格での損益を取得する */
-    public function getCurrentBenefit($nowPrice)
+    public function getCurrentBenefit($currentPrice)
     {
         if ($this->entryType == 'BUY') {
-            return $nowPrice - $this->gotPrice;
+            return $currentPrice - $this->gotPrice;
         } else if ($this->entryType == 'SELL')  {
-            return  $this->gotPrice - $nowPrice;
+            return  $this->gotPrice - $currentPrice;
         }
     }
 }
