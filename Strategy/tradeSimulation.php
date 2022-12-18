@@ -40,7 +40,7 @@ class Strategy
 
     public function trade($priceData)
     {
-        foreach($priceData as $key => $price) {
+        foreach($priceData as $price) {
             $this->settle($price);
             $this->entry($price);
         }
@@ -60,12 +60,9 @@ class Strategy
         
         $benefit = $this->Positions->getAllCurrentBenefit($currentPrice);
 
-        // $key = $this->Positions->getPlusPositionKey($currentPrice);
-        // $benefit = $this->Positions->getCurrentBenefitById();
-
-        foreach($this->Positions->getPositions() as $key => $Position) {
+        foreach($this->Positions->getPositions() as $id => $Position) {
             if ($this->canSettle($Position,$currentPrice)) {
-                $this->Positions->removePosition($key);
+                $this->Positions->removePosition($id);
                 $this->setTotalBenefit($Position->getCurrentBenefit($currentPrice));
                 $this->addTradeCount();
             } else {
@@ -222,9 +219,9 @@ class Positions
     }
 
     /** リストから削除する */
-    public function removePosition($key)
+    public function removePosition($id)
     {
-        unset($this->positionList[$key]);
+        unset($this->positionList[$id]);
     }
 
     /** リストを初期化する */
