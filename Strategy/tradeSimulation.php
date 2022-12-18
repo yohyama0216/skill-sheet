@@ -59,7 +59,10 @@ class Strategy
         }
         
         $benefit = $this->Positions->getAllCurrentBenefit($currentPrice);
-        
+
+        // $key = $this->Positions->getPlusPositionKey($currentPrice);
+        // $benefit = $this->Positions->getCurrentBenefitById();
+
         foreach($this->Positions->getPositions() as $key => $Position) {
             if ($this->canSettle($Position,$currentPrice)) {
                 $this->Positions->removePosition($key);
@@ -131,7 +134,7 @@ class Strategy
 
     public function showPositions()
     {
-        //var_dump($this->Positions);
+        var_dump($this->Positions);
         echo '--------------'.PHP_EOL;
     }
 
@@ -214,7 +217,8 @@ class Positions
     /** リストに追加する */
     public function addPosition($Position)
     {
-        $this->positionList[] = $Position;
+        $positionId = $Position->id;
+        $this->positionList[$positionId] = $Position;
     }
 
     /** リストから削除する */
@@ -293,6 +297,7 @@ class Position
         $this->lot = $lot;
         $this->entryType = $entryType;
         $this->gotPrice = $gotPrice;
+        $this->id = $this->generateId($entryType);
     }
 
     /** 現在価格での損益を取得する */
@@ -303,6 +308,11 @@ class Position
         } else if ($this->entryType == 'SELL')  {
             return  $this->gotPrice - $currentPrice;
         }
+    }
+
+    public function generateId()
+    {
+        return uniqid();
     }
 }
 
