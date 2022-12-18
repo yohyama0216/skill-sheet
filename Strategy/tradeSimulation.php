@@ -59,22 +59,42 @@ class Strategy
         }
         
         $benefit = $this->Positions->getAllCurrentBenefit($currentPrice);
+        $pairPositions = $this->findPairSettlePosition($currentPrice);
+        if ($pairPositions) {
+            $ids = [$pairPositions['minus']->getId(),$pairPositions['plus']->getId()];
+            $this->Positions->removePosition($ids);
+            $benefits = $pairPositions['minus']->getCurrentBenefit($currentPrice) + $pairPositions['plus']->getCurrentBenefit($currentPrice);
+            $this->setTotalBenefit($benefits);
+            $this->addTradeCount();
+        } else {
+            $this->setMaxDrawdown($benefit);
+        }
+    }
 
-        foreach($this->Positions->getPositions() as $id => $Position) {
-            if ($this->canSettle($Position,$currentPrice)) {
-                $this->Positions->removePosition($id);
-                $this->setTotalBenefit($Position->getCurrentBenefit($currentPrice));
-                $this->addTradeCount();
-            } else {
-                $this->setMaxDrawdown($benefit);
+    public function findPairSettlePosition($currentPrice)
+    {
+        $minusPositions = $this->Positions->findAllMinusPosition($currentPrice);
+        $plusPositions = $this->Positions->findAllMoreThanZeroPosition($currentPrice);
+        if (!$minusPositions || !$plusPositions) {
+            return [];
+        }
+        foreach($minusPositions as $minusPosition) {
+            foreach($plusPositions as $plusPosition) {
+                if ($minusPosition->getCurrentBenefit($currentPrice) 
+                + $plusPosition->getCurrentBenefit($currentPrice) >= $this->width) {
+                    return [
+                        'minus' => $minusPosition,
+                        'plus' => $plusPosition
+                    ];
+                }
             }
         }
     }
 
     /** 決済の判定 */
-    public function canSettle($Position,$currentPrice)
+    public function canSettle($currentPrice)
     {
-        return ($Position->getCurrentBenefit($currentPrice) > $this->width);
+        
     }
 
     /** ポジションを持つ */
@@ -214,14 +234,16 @@ class Positions
     /** リストに追加する */
     public function addPosition($Position)
     {
-        $positionId = $Position->id;
+        $positionId = $Position->getId();
         $this->positionList[$positionId] = $Position;
     }
 
     /** リストから削除する */
-    public function removePosition($id)
+    public function removePosition($ids)
     {
-        unset($this->positionList[$id]);
+        foreach($ids as $id) {
+            unset($this->positionList[$id]);
+        }
     }
 
     /** リストを初期化する */
@@ -270,6 +292,30 @@ class Positions
         }
        
     }
+
+    /** 現在の価格でマイナスになっているポジションの全IDを取得する */
+    public function findAllMinusPosition($currentPrice)
+    {
+        $positions = [];
+        foreach($this->positionList as $position) {
+            if ($position->getCurrentBenefit($currentPrice) < 0) {
+                $positions[] = $position;
+            }
+        }
+        return $positions;
+    }
+
+    /** 現在の価格でゼロ以上になっているポジションの全IDを取得する */
+    public function findAllMoreThanZeroPosition($currentPrice)
+    {
+        $positions = [];
+        foreach($this->positionList as $position) {
+            if ($position->getCurrentBenefit($currentPrice) >= 0) {
+                $positions[] = $position;
+            }
+        }
+        return $positions;
+    }
 }
 
 /** 各建玉 */
@@ -284,9 +330,17 @@ class Position
     /** 取得時の値段 */
     private $gotPrice = 0;
 
+    /** ポジションのID */
+    private $id = '';
+
     public function getEntryType()
     {
         return $this->entryType;
+    }
+
+    public function getId()
+    {
+        return $this->id;
     }
 
     public function __construct($lot, $entryType, $gotPrice)
