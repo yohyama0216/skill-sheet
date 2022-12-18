@@ -30,6 +30,12 @@ class Strategy
     private $maxDrawdown = 0;
     private $tradeCount= 0;
     private $width = 100;
+    private $currentPrice = 0;
+
+    public function setCurrentPrice($currentPrice)
+    {
+        $this->currentPrice = $currentPrice; 
+    }
 
     public function __construct($initial,$tradeLot)
     {
@@ -41,8 +47,9 @@ class Strategy
     public function trade($priceData)
     {
         foreach($priceData as $price) {
-            $this->settle($price);
-            $this->entry($price);
+            $this->setCurrentPrice($price);
+            $this->settle();
+            $this->entry();
         }
         $this->showPositions();
         $this->showTotalBenefit();
@@ -52,18 +59,18 @@ class Strategy
     }
 
     /** 決済する */
-    public function settle($currentPrice)
+    public function settle()
     {
         if ($this->Positions == null) {
             return ;
         }
         
-        $benefit = $this->Positions->getAllCurrentBenefit($currentPrice);
-        $pairPositions = $this->findPairSettlePosition($currentPrice);
+        $benefit = $this->Positions->getAllCurrentBenefit($this->currentPrice);
+        $pairPositions = $this->findPairSettlePosition();
         if ($pairPositions) {
             $ids = [$pairPositions['minus']->getId(),$pairPositions['plus']->getId()];
             $this->Positions->removePosition($ids);
-            $benefits = $pairPositions['minus']->getCurrentBenefit($currentPrice) + $pairPositions['plus']->getCurrentBenefit($currentPrice);
+            $benefits = $pairPositions['minus']->getCurrentBenefit($this->currentPrice) + $pairPositions['plus']->getCurrentBenefit($this->currentPrice);
             $this->setTotalBenefit($benefits);
             $this->addTradeCount();
         } else {
@@ -71,17 +78,17 @@ class Strategy
         }
     }
 
-    public function findPairSettlePosition($currentPrice)
+    public function findPairSettlePosition()
     {
-        $minusPositions = $this->Positions->findAllMinusPosition($currentPrice);
-        $plusPositions = $this->Positions->findAllMoreThanZeroPosition($currentPrice);
+        $minusPositions = $this->Positions->findAllMinusPosition($this->currentPrice);
+        $plusPositions = $this->Positions->findAllMoreThanZeroPosition($this->currentPrice);
         if (!$minusPositions || !$plusPositions) {
             return [];
         }
         foreach($minusPositions as $minusPosition) {
             foreach($plusPositions as $plusPosition) {
-                if ($minusPosition->getCurrentBenefit($currentPrice) 
-                + $plusPosition->getCurrentBenefit($currentPrice) >= $this->width) {
+                if ($minusPosition->getCurrentBenefit($this->currentPrice) 
+                + $plusPosition->getCurrentBenefit($this->currentPrice) >= $this->width) {
                     return [
                         'minus' => $minusPosition,
                         'plus' => $plusPosition
@@ -98,24 +105,24 @@ class Strategy
     }
 
     /** ポジションを持つ */
-    public function entry($currentPrice)
+    public function entry()
     {
-        $entryType = $this->setEntryType($currentPrice);
-        if ($this->canEntry($currentPrice)) {
-            $this->Positions->addPosition(new Position($this->tradeLot, $entryType, $currentPrice));
+        $entryType = $this->setEntryType();
+        if ($this->canEntry()) {
+            $this->Positions->addPosition(new Position($this->tradeLot, $entryType, $this->currentPrice));
             $this->addTradeCount();
         }
     }
 
     /** ポジションを追加する条件 */
-    public function canEntry($currentPrice)
+    public function canEntry()
     {
-        $currentPositionsBenefit = $this->Positions->getAllCurrentBenefit($currentPrice);
+        $currentPositionsBenefit = $this->Positions->getAllCurrentBenefit($this->currentPrice);
         $isLargerThanZeroTotal = (($this->initial + $this->totalBenefit + $currentPositionsBenefit) > 0);
         return $isLargerThanZeroTotal && ($this->Positions->countPositions() < self::POSITION_COUNT_MAX);
     }
 
-    public function setEntryType($currentPrice)
+    public function setEntryType()
     {
         $entryTypes = $this->Positions->getAllEntryType();
         if ($entryTypes['SELL'] >= 3) {
@@ -155,9 +162,9 @@ class Strategy
         echo '--------------'.PHP_EOL;
     }
 
-    public function showPositionsTotalBenefit($currentPrice)
+    public function showPositionsTotalBenefit()
     {
-        echo '含み損'.$this->Positions->getAllCurrentBenefit($currentPrice).PHP_EOL;
+        echo '含み損'.$this->Positions->getAllCurrentBenefit($this->currentPrice).PHP_EOL;
     }
 
     public function showTotalBenefit()
