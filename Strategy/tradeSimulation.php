@@ -21,12 +21,15 @@ class TradeSimulation
 // トレード戦略
 class Strategy
 {
+    const POSITION_COUNT_MAX = 6;
+    
     private $initial = 0;
     private $tradeLot = 0; // ロット？金額？　微妙
     private $Positions = null; 
     private $totalBenefit = 0;
     private $maxDrawdown = 0;
     private $tradeCount= 0;
+    private $width = 100;
 
     public function __construct($initial,$tradeLot)
     {
@@ -40,8 +43,8 @@ class Strategy
         foreach($priceData as $key => $price) {
             $this->settle($price);
             $this->entry($price);
-            $this->showPositions();
         }
+        $this->showPositions();
         $this->showTotalBenefit();
         $this->showPositionsTotalBenefit($price);
         $this->showMaxDrawdown();
@@ -56,32 +59,40 @@ class Strategy
         }
         
         $benefit = $this->Positions->getAllCurrentBenefit($currentPrice);
-        if ($benefit > 0) {
-            $this->Positions->clearPositions();
-            $this->setTotalBenefit($benefit);
-            $this->addTradeCount();
-        } else {
-            $this->setMaxDrawdown($benefit);
+        
+        foreach($this->Positions->getPositions() as $key => $Position) {
+            if ($this->canSettle($Position,$currentPrice)) {
+                $this->Positions->removePosition($key);
+                $this->setTotalBenefit($Position->getCurrentBenefit($currentPrice));
+                $this->addTradeCount();
+            } else {
+                $this->setMaxDrawdown($benefit);
+            }
         }
+    }
+
+    /** 決済の判定 */
+    public function canSettle($Position,$currentPrice)
+    {
+        return ($Position->getCurrentBenefit($currentPrice) > $this->width);
     }
 
     /** ポジションを持つ */
     public function entry($currentPrice)
     {
         $entryType = $this->setEntryType($currentPrice);
-        if ($this->canAddPosition($currentPrice)) {
-            // entryTypeが買いor売りが必ず2以上存在するようにする
+        if ($this->canEntry($currentPrice)) {
             $this->Positions->addPosition(new Position($this->tradeLot, $entryType, $currentPrice));
             $this->addTradeCount();
         }
     }
 
     /** ポジションを追加する条件 */
-    public function canAddPosition($currentPrice)
+    public function canEntry($currentPrice)
     {
         $currentPositionsBenefit = $this->Positions->getAllCurrentBenefit($currentPrice);
         $isLargerThanZeroTotal = (($this->initial + $this->totalBenefit + $currentPositionsBenefit) > 0);
-        return $isLargerThanZeroTotal && ($this->Positions->countPositions() < 5);
+        return $isLargerThanZeroTotal && ($this->Positions->countPositions() < self::POSITION_COUNT_MAX);
     }
 
     public function setEntryType($currentPrice)
@@ -120,7 +131,7 @@ class Strategy
 
     public function showPositions()
     {
-        var_dump($this->Positions);
+        //var_dump($this->Positions);
         echo '--------------'.PHP_EOL;
     }
 
@@ -193,11 +204,23 @@ class Positions
     {
 
     }
+
+    /** */
+    public function getPositions()
+    {
+       return $this->positionList;        
+    }
     
     /** リストに追加する */
     public function addPosition($Position)
     {
         $this->positionList[] = $Position;
+    }
+
+    /** リストから削除する */
+    public function removePosition($key)
+    {
+        unset($this->positionList[$key]);
     }
 
     /** リストを初期化する */
