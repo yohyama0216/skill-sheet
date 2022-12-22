@@ -29,7 +29,7 @@ class Strategy
     private $totalBenefit = 0;
     private $maxDrawdown = 0;
     private $tradeCount= 0;
-    private $width = 100;
+    private $width = 200;
     private $currentPrice = 0;
 
     public function setCurrentPrice($currentPrice)
@@ -188,7 +188,7 @@ class Strategy
 class PriceData
 {
     private $priceData = []; // Priceクラスも作る？
-
+    private $prevPrice = 33000;
 
     public function __construct()
     {
@@ -199,15 +199,13 @@ class PriceData
     {
         $data = [];
         for($i=0;$i<365;$i++) {
-            $data[] = 1000 + rand(1,300) - rand(1,300);
+            $priceDiff = rand(1,1500) - rand(1,1500);
+            $currentPrice = $this->prevPrice + $priceDiff;
+            $data[] = $currentPrice; 
+            $this->prevPrice = $currentPrice;
         }
         return $data;
     }
-
-    // public function setCurrentPrice($price)
-    // {
-    //     $this->currentPrice = $price;
-    // }
 
     public function get()
     {
