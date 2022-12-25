@@ -1,6 +1,9 @@
 <?php
 
-class simulate
+/**
+ * オッズ、リターン、所持金に対する掛け金の割合を指定してシミュレーションする
+ */
+class OddsSimulater
 {
     // 確率
     private $probability = 0.5;
@@ -150,7 +153,7 @@ $returnList = range(1.0,5,0.5);
 foreach ($probabilityList as $probability) {
     foreach ($betRatioList as $betRatio) {
         foreach ($returnList as $return) {
-            $simulate = new simulate($betRatio, $probability, $return);
+            $simulate = new OddsSimulater($betRatio, $probability, $return);
             $simulate->doSet();
         }
     }
