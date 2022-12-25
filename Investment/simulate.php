@@ -136,18 +136,19 @@ class simulate
 
         }
         if ($countBankrupt <= 2) {
-            echo "ケース結果 初期: $this->initial ベット比率: $this->betRatio リターン: $this->return 破産回数: $countBankrupt 最大: $max 最小: $min";
+            echo "ケース結果 初期: $this->initial 確率: $this->probability ベット比率: $this->betRatio リターン: $this->return 破産回数: $countBankrupt 最大: $max 最小: $min";
             echo PHP_EOL;
         }
     }
 }
 
-$betRatioList = range(0.01, 0.5, 0.01);
-$probabilityList = range(0.1, 0.5, 0.1);
-$returnList = range(1.0,5,0.1);
+$probabilityList = range(0.1, 0.5, 0.01);
+$betRatioList = range(0.01, 0.5, 0.1);
+$returnList = range(1.0,5,0.5);
 
-foreach ($betRatioList as $betRatio) {
-    foreach ($probabilityList as $probability) {
+
+foreach ($probabilityList as $probability) {
+    foreach ($betRatioList as $betRatio) {
         foreach ($returnList as $return) {
             $simulate = new simulate($betRatio, $probability, $return);
             $simulate->doSet();
